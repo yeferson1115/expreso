@@ -7,6 +7,12 @@
   <!-- Bootstrap 5 -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
+    :root {
+      --brand-primary: #1f4368;
+      --brand-soft: #e9edf2;
+      --brand-text: #07244a;
+    }
+    body { background:#f2f3f5; }
     .step { display:none; }
     .step.active { display:block; }
     .small-muted { font-size:0.9rem; color:#6c757d; }
@@ -14,44 +20,111 @@
     .invalid-feedback { display:block; }
     .cursor-pointer { cursor:pointer; }
     .tag { background:#eef; padding:3px 8px; border-radius:12px; margin-right:6px; }
-    .btn-brasilia { background:#0d6efd; color:#fff; border:none; }
+    .btn-brasilia {
+      background: var(--brand-primary);
+      color:#fff;
+      border:none;
+      border-radius: 32px;
+      padding: 10px 24px;
+      font-weight: 600;
+    }
+    .hero-banner {
+      position: relative;
+      min-height: 270px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(rgba(28,53,81,.62), rgba(28,53,81,.62)),
+        url('https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=1800&q=80') center/cover no-repeat;
+      color: #fff;
+      letter-spacing: 1px;
+    }
+    .hero-banner h1 {
+      font-size: clamp(2rem, 3.5vw, 3rem);
+      font-weight: 700;
+      margin: 0;
+    }
+    #mainContent {
+      margin-top: -48px;
+      position: relative;
+      z-index: 2;
+      background: #fff;
+      border-radius: 38px 38px 0 0;
+      padding: 1.8rem 1.4rem 2rem;
+      box-shadow: 0 -6px 24px rgba(0,0,0,0.08);
+      min-height: calc(100vh - 210px);
+    }
+    .title-ppal {
+      color: var(--brand-text);
+      font-size: clamp(1.8rem, 3vw, 2.8rem);
+      font-weight: 700;
+      margin-bottom: 0;
+    }
+    .search-card {
+      border: 0;
+      box-shadow: none;
+      background: transparent;
+    }
+    .title-step {
+      border: 0;
+      background: var(--brand-soft);
+      color: #52637a;
+      border-radius: 24px;
+      padding: .5rem .9rem;
+      font-size: .92rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .title-step.active {
+      background: #d3dfec;
+      color: var(--brand-primary);
+    }
+    .form-control, .form-select {
+      border-radius: 20px;
+      min-height: 46px;
+      background-color: #eff2f5;
+      border: 1px solid #eff2f5;
+    }
+    .form-control:focus, .form-select:focus {
+      box-shadow: 0 0 0 .2rem rgba(31,67,104,.15);
+      border-color: rgba(31,67,104,.25);
+      background-color: #fff;
+    }
+    .ticket-item-selectable {
+      border: 2px solid #e4e9ef;
+      border-radius: 14px !important;
+      margin-bottom: .6rem;
+      text-align: left;
+      transition: all .2s ease;
+      background: #fff;
+    }
+    .ticket-item-selectable.selected {
+      border-color: var(--brand-primary);
+      background: #eef4fb;
+      box-shadow: 0 0 0 .15rem rgba(31,67,104,.12);
+    }
+    @media (max-width: 768px) {
+      #pills-tab {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        padding-bottom: .4rem;
+      }
+    }
   </style>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 
-<div id="main-card" style="position: relative;
-    margin-top: -60px;
-    background: #ffffff;
-    border-top-left-radius: 40px;
-    border-top-right-radius: 40px;
-    padding: 2rem 1.5rem 6rem 1.5rem;
-    box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
-    min-height: calc(100vh - 260px);">
-    <div class="app-overlay"></div>
-    <div class="app-content">
-        <div id="search-step">
-
-            <h2>Programa tu traslado</h2>
-            <p>Te conectamos con la región caribe</p>
-
-            
-
-        </div>
-
-    </div>
-</div>
-
-
-
+<header class="hero-banner">
+  <h1>UNITRANSCO</h1>
+</header>
 
 <div class="container my-4" id="mainContent">
-  <h2 class="title-ppal">Programa tu traslado</h2>
-  <p class="small-muted">Sigue los pasos para solicitar un traslado hacia/desde tu punto de abordaje.</p>
+  <h2 class="title-ppal">Bienvenidos,</h2>
+  <p class="small-muted">Te conectamos con la región caribe.</p>
   <div id="alertPlaceholder"></div>
 
-  <div class="card">
+  <div class="card search-card">
     <div class="card-body">
       <!-- Stepper -->
       <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
@@ -85,6 +158,7 @@
           <div class="mb-3">
             <button type="button" class="btn btn-brasilia" id="btnCheckTickets">Confirmar tiquetes</button>            
             <div class="mt-3" id="ticketsResult"></div>
+            <input type="hidden" id="selectedTicketStep1" value="">
           </div>
           <div class="d-flex justify-content-end">
             <button type="button" class="btn btn-brasilia" id="toStep2">Siguiente</button>
@@ -356,7 +430,6 @@
 <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
 
 
 <script>
@@ -694,7 +767,12 @@ $('#idNumber, #ticketSelect, #serviceType, #transferOption').on('change keyup', 
     showAlert('No se encontraron tiquetes asociados a ese número. No puedes continuar.', 'warning');
     return;
   }
-  
+
+  if (!$('#selectedTicketStep1').val()) {
+    showAlert('Selecciona un tiquete dando clic en la tarjeta antes de continuar.', 'warning');
+    return;
+  }
+
   goToStep(2);
 });
 
@@ -704,50 +782,58 @@ $('#idNumber, #ticketSelect, #serviceType, #transferOption').on('change keyup', 
  
 });
 
- // Confirm tickets (simulado)
- $('#btnCheckTickets').on('click', function () {
-   VBLoader.show();
+ // Consulta servicios/tiquetes (servicio real + fallback demo)
+ function getMockServicios(numeroDocumento) {
+  return {
+    source: 'mock',
+    data: [
+      {
+        numero: `DM-${numeroDocumento}-001`,
+        fechaViaje: '2026-03-20 08:30',
+        descripcion: 'UNITRANSCO - Barranquilla / Cartagena',
+        cliente: 'Pasajero Demo 1',
+        empresa: 'UNITRANSCO',
+        agencia: 'Web Demo'
+      },
+      {
+        numero: `DM-${numeroDocumento}-002`,
+        fechaViaje: '2026-03-20 14:00',
+        descripcion: 'UNITRANSCO - Cartagena / Barranquilla',
+        cliente: 'Pasajero Demo 2',
+        empresa: 'UNITRANSCO',
+        agencia: 'Web Demo'
+      }
+    ]
+  };
+ }
 
-  const numero = $('#idNumber').val().trim();
+ function renderServiciosEnUI(response, options = {}) {
+  const { isMock = false, errorMessage = '' } = options;
 
-  if (!numero) {
-     VBLoader.hide();
-    showAlert('Debes ingresar número de documento.', 'warning');
+  if (response.error || !response.data || !Array.isArray(response.data) || response.data.length === 0) {
+    $('#ticketsResult').html('<div class="alert alert-warning">No se encontraron servicios/tiquetes asociados a ese número.</div>');
+    $('#ticketSelect').empty();
+    tiquetesEncontrados = false;
     return;
   }
 
-  $('#ticketsResult').html('<div class="small text-muted">Consultando tiquetes...</div>');
+  tiquetesEncontrados = true;
+  const tiquetes = response.data;
+  let html = '';
 
-  const dataToSend = {    
-    numeroIdentificacion: numero,
-    fechaInicio: '2018-01-01' // si la fecha es fija, puedes cambiarla dinámicamente si quieres
-  };
+  if (isMock) {
+    html += `<div class="alert alert-info mb-3">
+      ⚠️ Servicio real no disponible. Mostrando datos simulados para demostración.
+      ${errorMessage ? `<div class="small mt-1">Detalle: ${errorMessage}</div>` : ''}
+    </div>`;
+  }
 
-    $.ajax({
-      url: "https://txtest.lappiz.io/ExpresoBrasilia_Lappiz.api/api/functions/getTiquetes?numero="+numero,
-      method: "GET",
-      contentType: "application/json",
-      dataType: "json",
-      data: JSON.stringify(dataToSend),
-      success: function (response) {
-        VBLoader.hide();
-        console.log('✅ Respuesta:', response);
+  html += `<div class="list-group">`;
+  const $selStep2 = $('#ticketSelect').empty();
+  const placeholder = `<option value="">-- Seleccione el tiquete --</option>`;
+  $selStep2.append(placeholder);
 
-    if (response.error || !response.data || !Array.isArray(response.data) || response.data.length === 0) {
-      $('#ticketsResult').html('<div class="alert alert-warning">No se encontraron tiquetes asociados a ese número.</div>');
-      $('#ticketSelect').empty();
-      tiquetesEncontrados = false;
-      return;
-    }
-    
-    tiquetesEncontrados = true;
-    const tiquetes = response.data;
-    let html = `<div class="list-group">`;
-    const $sel = $('#ticketSelect').empty();
-    $sel.append(`<option value="">-- Seleccione el tiquete --</option>`);
-
-    tiquetes.forEach(t => {
-      // === 🧠 Extraer origen y destino desde la descripción ===
+  tiquetes.forEach((t, idx) => {
     let origen = '';
     let destino = '';
 
@@ -760,49 +846,92 @@ $('#idNumber, #ticketSelect, #serviceType, #transferOption').on('change keyup', 
       destino = (des || '').trim();
     }
 
-    $sel.append(`
+    const optionHtml = `
       <option value="${t.numero}"
         data-fecha="${t.fechaViaje || ''}"
         data-descripcion="${t.descripcion || ''}"
         data-cliente="${t.cliente || ''}"
         data-origin="${origen}"
-        data-destination="${destino}">
+        data-destination="${destino}"
+        ${idx === 0 ? 'selected' : ''}>
         ${t.fechaViaje || '-'} — ${origen} / ${destino}
       </option>
-    `);
+    `;
 
+    $selStep2.append(optionHtml);
 
-      // === Mostrar lista visual ===
-      html += `
-        <div class="list-group-item">
-          <strong>${t.descripcion || '-'}</strong><br>
-          <div>🕓 Fecha de viaje: <strong>${t.fechaViaje || '-'}</strong></div>
-          <div>👤 Pasajero: ${t.cliente || '-'}</div>
-          <div>📍 Origen: ${origen || '-'} — Destino: ${destino || '-'}</div>
-          <div class="small text-muted">Empresa: ${t.empresa || '-'} — Agencia: ${t.agencia || '-'}</div>
-        </div>
-      `;
+    html += `
+      <button type="button" class="list-group-item list-group-item-action ticket-item-selectable" data-ticket-number="${t.numero || ''}">
+        <strong>${t.descripcion || '-'}</strong><br>
+        <div>🕓 Fecha de viaje: <strong>${t.fechaViaje || '-'}</strong></div>
+        <div>👤 Pasajero: ${t.cliente || '-'}</div>
+        <div>📍 Origen: ${origen || '-'} — Destino: ${destino || '-'}</div>
+        <div class="small text-muted">Empresa: ${t.empresa || '-'} — Agencia: ${t.agencia || '-'}</div>
+      </button>
+    `;
+  });
 
-    
-    });
+  html += `</div>`;
+  $('#ticketsResult').html(html);
 
-    html += `</div>`;
-    $('#ticketsResult').html(html);
-  },
-  error: function (xhr) {
+  if (tiquetes.length > 0) {
+    const defaultValue = tiquetes[0].numero || '';
+    $('#selectedTicketStep1').val(defaultValue);
+    $('#ticketSelect').val(defaultValue).trigger('change');
+    $('#ticketsResult .ticket-item-selectable').removeClass('selected');
+    $(`#ticketsResult .ticket-item-selectable[data-ticket-number="${defaultValue}"]`).addClass('selected');
+  }
+ }
+
+ async function consultarServicios(numeroDocumento) {
+  const endpoint = `https://txtest.lappiz.io/ExpresoBrasilia_Lappiz.api/api/functions/getTiquetes?numero=${encodeURIComponent(numeroDocumento)}`;
+  const res = await fetch(endpoint, {
+    method: 'GET',
+    headers: { Accept: 'application/json' }
+  });
+
+  if (!res.ok) {
+    throw new Error(`HTTP ${res.status}`);
+  }
+
+  return await res.json();
+ }
+
+ $('#btnCheckTickets').on('click', async function () {
+  VBLoader.show();
+
+  const numero = $('#idNumber').val().trim();
+
+  if (!numero) {
     VBLoader.hide();
-        console.error('❌ Error al consultar el servicio:', xhr);
-        $('#ticketsResult').html('<div class="alert alert-danger">Error al consultar el servicio. Verifica los datos o inténtalo más tarde.</div>');
-      }
+    showAlert('Debes ingresar número de documento.', 'warning');
+    return;
+  }
+
+  $('#ticketsResult').html('<div class="small text-muted">Consultando servicios...</div>');
+
+  try {
+    const response = await consultarServicios(numero);
+    console.log('✅ Respuesta servicio real:', response);
+    renderServiciosEnUI(response);
+  } catch (error) {
+    console.error('❌ Error al consultar servicios reales, usando mock:', error);
+    const mockResponse = getMockServicios(numero);
+    renderServiciosEnUI(mockResponse, {
+      isMock: true,
+      errorMessage: error?.message || 'Servicio no disponible'
     });
+  } finally {
+    VBLoader.hide();
+  }
 });
 
-  // Cuando seleccionan ticket
-$('#ticketSelect').on('change', function(){
-  const opt = $(this).find('option:selected');
-  if (!opt.val()) { 
-    $('#ticketInfo').text(''); 
-    return; 
+  // Cuando seleccionan ticket (sincronizado entre paso 1 y paso 2)
+function applySelectedTicketInfo() {
+  const opt = $('#ticketSelect').find('option:selected');
+  if (!opt.val()) {
+    $('#ticketInfo').text('');
+    return;
   }
 
   const origin = opt.data('origin');
@@ -813,8 +942,28 @@ $('#ticketSelect').on('change', function(){
   localStorage.setItem('Origen', origin);
   localStorage.setItem('Destino', dest);
   localStorage.setItem('Salida', fecha);
-  // Llenar dependientes 
+  // Llenar dependientes
   populateVehicles(origin, dest);
+}
+
+$(document).on('click', '#ticketsResult .ticket-item-selectable', function(){
+  const value = $(this).data('ticket-number');
+  $('#ticketsResult .ticket-item-selectable').removeClass('selected');
+  $(this).addClass('selected');
+  $('#selectedTicketStep1').val(value);
+  $('#ticketSelect').val(value).trigger('change');
+  updateStepButtons();
+});
+
+$('#ticketSelect').on('change', function(){
+  const value = $(this).val();
+  $('#selectedTicketStep1').val(value || '');
+  $('#ticketsResult .ticket-item-selectable').removeClass('selected');
+  if (value) {
+    $(`#ticketsResult .ticket-item-selectable[data-ticket-number="${value}"]`).addClass('selected');
+  }
+  applySelectedTicketInfo();
+  updateStepButtons();
 });
 
 $('#serviceType').on('change', function () {
@@ -2416,5 +2565,4 @@ function G_addModalResumen() {
 </script>
 </body>
 </html>
-
 
