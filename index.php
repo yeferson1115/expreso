@@ -146,6 +146,13 @@
             <button type="button" class="btn btn-brasilia" id="btnCheckTickets">Confirmar tiquetes</button>            
             <div class="mt-3" id="ticketsResult"></div>
           </div>
+          <div class="row mb-3 d-none" id="ticketSelectStep1Wrapper">
+            <div class="col-md-6">
+              <label class="form-label">Tiquete a usar</label>
+              <select id="ticketSelectStep1" class="form-select"></select>
+              <div class="small-muted mt-1">Selecciona aquí el tiquete que usarás en el paso 2.</div>
+            </div>
+          </div>
           <div class="d-flex justify-content-end">
             <button type="button" class="btn btn-brasilia" id="toStep2">Siguiente</button>
           </div>
@@ -416,7 +423,7 @@
 <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="https://cdn.jsdelivr.net/npm/axios@1.7.7/dist/axios.min.js"></script>
+
 
 <script>
 $('<script>', {
@@ -753,7 +760,12 @@ $('#idNumber, #ticketSelect, #serviceType, #transferOption').on('change keyup', 
     showAlert('No se encontraron tiquetes asociados a ese número. No puedes continuar.', 'warning');
     return;
   }
-  
+
+  if (!$('#ticketSelectStep1').val()) {
+    showAlert('Selecciona el tiquete a usar antes de continuar.', 'warning');
+    return;
+  }
+
   goToStep(2);
 });
 
@@ -794,6 +806,8 @@ $('#idNumber, #ticketSelect, #serviceType, #transferOption').on('change keyup', 
   if (response.error || !response.data || !Array.isArray(response.data) || response.data.length === 0) {
     $('#ticketsResult').html('<div class="alert alert-warning">No se encontraron servicios/tiquetes asociados a ese número.</div>');
     $('#ticketSelect').empty();
+    $('#ticketSelectStep1').empty();
+    $('#ticketSelectStep1Wrapper').addClass('d-none');
     tiquetesEncontrados = false;
     return;
   }
@@ -810,10 +824,13 @@ $('#idNumber, #ticketSelect, #serviceType, #transferOption').on('change keyup', 
   }
 
   html += `<div class="list-group">`;
-  const $sel = $('#ticketSelect').empty();
-  $sel.append(`<option value="">-- Seleccione el tiquete --</option>`);
+  const $selStep1 = $('#ticketSelectStep1').empty();
+  const $selStep2 = $('#ticketSelect').empty();
+  const placeholder = `<option value="">-- Seleccione el tiquete --</option>`;
+  $selStep1.append(placeholder);
+  $selStep2.append(placeholder);
 
-  tiquetes.forEach(t => {
+  tiquetes.forEach((t, idx) => {
     let origen = '';
     let destino = '';
 
@@ -826,16 +843,20 @@ $('#idNumber, #ticketSelect, #serviceType, #transferOption').on('change keyup', 
       destino = (des || '').trim();
     }
 
-    $sel.append(`
+    const optionHtml = `
       <option value="${t.numero}"
         data-fecha="${t.fechaViaje || ''}"
         data-descripcion="${t.descripcion || ''}"
         data-cliente="${t.cliente || ''}"
         data-origin="${origen}"
-        data-destination="${destino}">
+        data-destination="${destino}"
+        ${idx === 0 ? 'selected' : ''}>
         ${t.fechaViaje || '-'} — ${origen} / ${destino}
       </option>
-    `);
+    `;
+
+    $selStep1.append(optionHtml);
+    $selStep2.append(optionHtml);
 
     html += `
       <div class="list-group-item">
@@ -850,6 +871,13 @@ $('#idNumber, #ticketSelect, #serviceType, #transferOption').on('change keyup', 
 
   html += `</div>`;
   $('#ticketsResult').html(html);
+
+  if (tiquetes.length > 0) {
+    $('#ticketSelectStep1Wrapper').removeClass('d-none');
+    const defaultValue = tiquetes[0].numero || '';
+    $('#ticketSelectStep1').val(defaultValue);
+    $('#ticketSelect').val(defaultValue).trigger('change');
+  }
  }
 
  async function consultarServicios(numeroDocumento) {
@@ -895,12 +923,12 @@ $('#idNumber, #ticketSelect, #serviceType, #transferOption').on('change keyup', 
   }
 });
 
-  // Cuando seleccionan ticket
-$('#ticketSelect').on('change', function(){
-  const opt = $(this).find('option:selected');
-  if (!opt.val()) { 
-    $('#ticketInfo').text(''); 
-    return; 
+  // Cuando seleccionan ticket (sincronizado entre paso 1 y paso 2)
+function applySelectedTicketInfo() {
+  const opt = $('#ticketSelect').find('option:selected');
+  if (!opt.val()) {
+    $('#ticketInfo').text('');
+    return;
   }
 
   const origin = opt.data('origin');
@@ -911,8 +939,22 @@ $('#ticketSelect').on('change', function(){
   localStorage.setItem('Origen', origin);
   localStorage.setItem('Destino', dest);
   localStorage.setItem('Salida', fecha);
-  // Llenar dependientes 
+  // Llenar dependientes
   populateVehicles(origin, dest);
+}
+
+$('#ticketSelectStep1').on('change', function(){
+  const value = $(this).val();
+  $('#ticketSelect').val(value);
+  applySelectedTicketInfo();
+  updateStepButtons();
+});
+
+$('#ticketSelect').on('change', function(){
+  const value = $(this).val();
+  $('#ticketSelectStep1').val(value);
+  applySelectedTicketInfo();
+  updateStepButtons();
 });
 
 $('#serviceType').on('change', function () {
