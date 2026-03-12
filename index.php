@@ -418,7 +418,6 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://cdn.jsdelivr.net/npm/axios@1.7.7/dist/axios.min.js"></script>
 
-
 <script>
 $('<script>', {
     src: 'https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js',
@@ -764,26 +763,116 @@ $('#idNumber, #ticketSelect, #serviceType, #transferOption').on('change keyup', 
  
 });
 
- // Consulta servicios/tiquetes con Axios
- async function consultarServiciosConAxios(numeroDocumento) {
-  const endpoint = `https://txtest.lappiz.io/ExpresoBrasilia_Lappiz.api/api/functions/getTiquetes?numero=${encodeURIComponent(numeroDocumento)}`;
-  const response = await axios.get(endpoint, {
-    headers: {
-      Accept: 'application/json'
-    },
-    timeout: 20000
+ // Consulta servicios/tiquetes (servicio real + fallback demo)
+ function getMockServicios(numeroDocumento) {
+  return {
+    source: 'mock',
+    data: [
+      {
+        numero: `DM-${numeroDocumento}-001`,
+        fechaViaje: '2026-03-20 08:30',
+        descripcion: 'UNITRANSCO - Barranquilla / Cartagena',
+        cliente: 'Pasajero Demo 1',
+        empresa: 'UNITRANSCO',
+        agencia: 'Web Demo'
+      },
+      {
+        numero: `DM-${numeroDocumento}-002`,
+        fechaViaje: '2026-03-20 14:00',
+        descripcion: 'UNITRANSCO - Cartagena / Barranquilla',
+        cliente: 'Pasajero Demo 2',
+        empresa: 'UNITRANSCO',
+        agencia: 'Web Demo'
+      }
+    ]
+  };
+ }
+
+ function renderServiciosEnUI(response, options = {}) {
+  const { isMock = false, errorMessage = '' } = options;
+
+  if (response.error || !response.data || !Array.isArray(response.data) || response.data.length === 0) {
+    $('#ticketsResult').html('<div class="alert alert-warning">No se encontraron servicios/tiquetes asociados a ese número.</div>');
+    $('#ticketSelect').empty();
+    tiquetesEncontrados = false;
+    return;
+  }
+
+  tiquetesEncontrados = true;
+  const tiquetes = response.data;
+  let html = '';
+
+  if (isMock) {
+    html += `<div class="alert alert-info mb-3">
+      ⚠️ Servicio real no disponible. Mostrando datos simulados para demostración.
+      ${errorMessage ? `<div class="small mt-1">Detalle: ${errorMessage}</div>` : ''}
+    </div>`;
+  }
+
+  html += `<div class="list-group">`;
+  const $sel = $('#ticketSelect').empty();
+  $sel.append(`<option value="">-- Seleccione el tiquete --</option>`);
+
+  tiquetes.forEach(t => {
+    let origen = '';
+    let destino = '';
+
+    if (t.descripcion && t.descripcion.includes('-') && t.descripcion.includes('/')) {
+      const partes = t.descripcion.split('-');
+      partes.shift();
+      const trayecto = partes.join('-').trim();
+      const [ori, des] = trayecto.split('/');
+      origen = (ori || '').trim();
+      destino = (des || '').trim();
+    }
+
+    $sel.append(`
+      <option value="${t.numero}"
+        data-fecha="${t.fechaViaje || ''}"
+        data-descripcion="${t.descripcion || ''}"
+        data-cliente="${t.cliente || ''}"
+        data-origin="${origen}"
+        data-destination="${destino}">
+        ${t.fechaViaje || '-'} — ${origen} / ${destino}
+      </option>
+    `);
+
+    html += `
+      <div class="list-group-item">
+        <strong>${t.descripcion || '-'}</strong><br>
+        <div>🕓 Fecha de viaje: <strong>${t.fechaViaje || '-'}</strong></div>
+        <div>👤 Pasajero: ${t.cliente || '-'}</div>
+        <div>📍 Origen: ${origen || '-'} — Destino: ${destino || '-'}</div>
+        <div class="small text-muted">Empresa: ${t.empresa || '-'} — Agencia: ${t.agencia || '-'}</div>
+      </div>
+    `;
   });
 
-  return response.data;
+  html += `</div>`;
+  $('#ticketsResult').html(html);
+ }
+
+ async function consultarServicios(numeroDocumento) {
+  const endpoint = `https://txtest.lappiz.io/ExpresoBrasilia_Lappiz.api/api/functions/getTiquetes?numero=${encodeURIComponent(numeroDocumento)}`;
+  const res = await fetch(endpoint, {
+    method: 'GET',
+    headers: { Accept: 'application/json' }
+  });
+
+  if (!res.ok) {
+    throw new Error(`HTTP ${res.status}`);
+  }
+
+  return await res.json();
  }
 
  $('#btnCheckTickets').on('click', async function () {
-   VBLoader.show();
+  VBLoader.show();
 
   const numero = $('#idNumber').val().trim();
 
   if (!numero) {
-     VBLoader.hide();
+    VBLoader.hide();
     showAlert('Debes ingresar número de documento.', 'warning');
     return;
   }
@@ -791,65 +880,18 @@ $('#idNumber, #ticketSelect, #serviceType, #transferOption').on('change keyup', 
   $('#ticketsResult').html('<div class="small text-muted">Consultando servicios...</div>');
 
   try {
-    const response = await consultarServiciosConAxios(numero);
-    VBLoader.hide();
-    console.log('✅ Respuesta Axios:', response);
-
-    if (response.error || !response.data || !Array.isArray(response.data) || response.data.length === 0) {
-      $('#ticketsResult').html('<div class="alert alert-warning">No se encontraron servicios/tiquetes asociados a ese número.</div>');
-      $('#ticketSelect').empty();
-      tiquetesEncontrados = false;
-      return;
-    }
-
-    tiquetesEncontrados = true;
-    const tiquetes = response.data;
-    let html = `<div class="list-group">`;
-    const $sel = $('#ticketSelect').empty();
-    $sel.append(`<option value="">-- Seleccione el tiquete --</option>`);
-
-    tiquetes.forEach(t => {
-      let origen = '';
-      let destino = '';
-
-      if (t.descripcion && t.descripcion.includes('-') && t.descripcion.includes('/')) {
-        const partes = t.descripcion.split('-');
-        partes.shift();
-        const trayecto = partes.join('-').trim();
-        const [ori, des] = trayecto.split('/');
-        origen = (ori || '').trim();
-        destino = (des || '').trim();
-      }
-
-      $sel.append(`
-        <option value="${t.numero}"
-          data-fecha="${t.fechaViaje || ''}"
-          data-descripcion="${t.descripcion || ''}"
-          data-cliente="${t.cliente || ''}"
-          data-origin="${origen}"
-          data-destination="${destino}">
-          ${t.fechaViaje || '-'} — ${origen} / ${destino}
-        </option>
-      `);
-
-      html += `
-        <div class="list-group-item">
-          <strong>${t.descripcion || '-'}</strong><br>
-          <div>🕓 Fecha de viaje: <strong>${t.fechaViaje || '-'}</strong></div>
-          <div>👤 Pasajero: ${t.cliente || '-'}</div>
-          <div>📍 Origen: ${origen || '-'} — Destino: ${destino || '-'}</div>
-          <div class="small text-muted">Empresa: ${t.empresa || '-'} — Agencia: ${t.agencia || '-'}</div>
-        </div>
-      `;
-    });
-
-    html += `</div>`;
-    $('#ticketsResult').html(html);
+    const response = await consultarServicios(numero);
+    console.log('✅ Respuesta servicio real:', response);
+    renderServiciosEnUI(response);
   } catch (error) {
+    console.error('❌ Error al consultar servicios reales, usando mock:', error);
+    const mockResponse = getMockServicios(numero);
+    renderServiciosEnUI(mockResponse, {
+      isMock: true,
+      errorMessage: error?.message || 'Servicio no disponible'
+    });
+  } finally {
     VBLoader.hide();
-    console.error('❌ Error al consultar los servicios con Axios:', error);
-    const message = error?.response?.data?.message || 'Error al consultar los servicios. Verifica los datos o inténtalo más tarde.';
-    $('#ticketsResult').html(`<div class="alert alert-danger">${message}</div>`);
   }
 });
 
