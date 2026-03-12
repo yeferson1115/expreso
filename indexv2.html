@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Programación de Traslados</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</head>
+<body>
+    <div class="container my-4">
+        <h2 class="mb-4">Programa tu traslado</h2>
+        <div id="app"></div>
+    </div>
+
+    <script>
+    // Datos simulados (debes reemplazar por llamadas a tu API)
+    const tiposIdentificacion = [
+        "Cédula de ciudadanía",
+        "Tarjeta de identidad",
+        "Registro civil",
+        "Pasaporte",
+        "Cédula de extranjería",
+        "Carnet diplomático",
+        "Acta de nacimiento",
+        "Cédula de identidad",
+        "Permiso especial de permanencia (PEP)",
+        "Permiso por protección temporal (PPT)",
+        "Salvoconducto",
+        "Tarjeta Andina",
+        "Documento extranjero"
+    ];
+
+    const ciudadesHabilitadas = [
+        { 
+            id: 1, 
+            nombre: "Ciudad A", 
+            tieneTraslado: true, 
+            barrios: ["Barrio 1", "Barrio 2", "Barrio 3"], 
+            paradas: ["Parada 1", "Parada 2", "Parada 3"],
+            horariosRutaFija: ["05:00", "06:00", "07:00", "08:00"],
+            horariosRutaPersonalizada: ["05:30", "06:30", "07:30", "08:30"]
+        },
+        { 
+            id: 2, 
+            nombre: "Ciudad B", 
+            tieneTraslado: true, 
+            barrios: ["Barrio 4", "Barrio 5"], 
+            paradas: ["Parada 4", "Parada 5"],
+            horariosRutaFija: ["09:00", "10:00", "11:00", "12:00"],
+            horariosRutaPersonalizada: ["09:30", "10:30", "11:30", "12:30"]
+        }
+    ];
+
+    const tiquetesActivos = [
+        { id: 101, origen: "Ciudad A", destino: "Ciudad B", horaSalida: "08:00", horaLlegada: "11:00" },
+        { id: 102, origen: "Ciudad B", destino: "Ciudad A", horaSalida: "12:00", horaLlegada: "15:00" }
+    ];
+
+    let trasladoData = {};
+
+    $(document).ready(function() {
+        const $app = $('#app');
+        
+        // Paso 1: Ingreso de información del pasajero
+        function renderIdentificacion() {
+            const html = `
+                <div class="card">
+                    <div class="card-body">
+                        <h4 class="card-title">Verificación de identidad</h4>
+                        <form id="formIdentificacion">
+                            <div class="mb-3">
+                                <label class="form-label">Tipo de identificación</label>
+                                <select class="form-select" id="tipoIdentificacion" required>
+                                    <option value="">Seleccione...</option>
+                                    ${tiposIdentificacion.map(t => `<option>${t}</option>`).join('')}
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Número de identificación</label>
+                                <input type="text" class="form-control" id="numeroIdentificacion" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Continuar</button>
+                        </form>
+                    </div>
+                </div>
+            `;
+            
+            $app.html(html);
+            
+            $('#formIdentificacion').submit(function(e) {
+                e.preventDefault();
+                const tipoId = $('#tipoIdentificacion').val();
+                const numeroId = $('#numeroIdentificacion').val();
+                
+                if (!tipoId || !numeroId) {
+                    alert('Por favor complete todos los campos');
+                    return;
+                }
+                
+                // Simular verificación de tiquete
+                const tieneTiquete = numeroId.endsWith('1');
+                
+                if (tieneTiquete) {
+                    trasladoData.pasajeroPrincipal = { tipoId, numeroId };
+                    renderSeleccionTiquete();
+                } else {
+                    $app.append('<div class="alert alert-danger mt-3">No se encontraron tiquetes vigentes</div>');
+                }
+            });
+        }
+
+        // Paso 2: Selección de tiquete y configuración de traslado
+        function renderSeleccionTiquete() {
+            const html = `
+                <div class="card">
+                    <div class="card-body">
+                        <h4 class="card-title">Seleccione su tiquete</h4>
+                        <form id="formTiquete">
+                            <div class="mb-3">
+                                <label class="form-label">Tiquete activo</label>
+                                <select class="form-select" id="selectTiquete" required>
+                                    <option value="">Seleccione un tiquete...</option>
+                                    ${tiquetesActivos.map(t => `
+                                        <option value="${t.id}" 
+                                            data-origen="${t.origen}" 
+                                            data-destino="${t.destino}"
+                                            data-horaSalida="${t.horaSalida}"
+                                            data-horaLlegada="${t.horaLlegada}">
+                                            ${t.origen} → ${t.destino} (Salida: ${t.horaSalida})
+                                        </option>
+                                    `).join('')}
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Tipo de servicio</label>
+                                <select class="form-select" id="tipoServicio" required>
+                                    <option value="">Seleccione...</option>
+                                    <option value="ruta_fija">Ruta fija</option>
+                                    <option value="ruta_personalizada">Ruta personalizada</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Opción de traslado</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="trasladoHacia">
+                                    <label class="form-check-label" for="trasladoHacia">Hacia punto de abordaje</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="trasladoDesde">
+                                    <label class="form-check-label" for="trasladoDesde">Desde punto de descenso</label>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Cantidad de pasajeros</label>
+                                <input type="number" class="form-control" id="cantidadPasajeros" min="1" value="1" required>
+                            </div>
+                            
+                            <div id="camposAdicionales"></div>
+                            
+                            <button type="submit" class="btn btn-primary">Continuar</button>
+                        </form>
+                    </div>
+                </div>
+            `;
+            
+            $app.html(html);
+            
+            // Manejar cambios en los controles
+            $('#tipoServicio, #trasladoHacia, #trasladoDesde').change(actualizarCamposAdicionales);
+            $('#formTiquete').submit(function(e) {
+                e.preventDefault();
+                guardarDatosTiquete();
+                renderRegistroPasajeros();
+            });
+        }
+
+        function actualizarCamposAdicionales() {
+            const tipoServicio = $('#tipoServicio').val();
+            const trasladoHacia = $('#trasladoHacia').is(':checked');
+            const trasladoDesde = $('#trasladoDesde').is(':checked');
+            const tiquete = $('#selectTiquete option:selected');
+            
+            let html = '';
+            
+            if (trasladoHacia) {
+                html += `<h5 class="mt-4">Traslado hacia punto de abordaje</h5>`;
+                
+                if (tipoServicio === 'ruta_fija') {
+                    html += `
+                        <div class="mb-3">
+                            <label class="form-label">Lugar de recogida</label>
+                            <select class="form-select" id="lugarRecogida">
+                                ${ciudadesHabilitadas.find(c => c.nombre === tiquete.data('origen')).paradas
+                                    .map(p => `<option>${p}</option>`).join('')}
+                            </select>
+                        </div>
+                    `;
+                } else {
+                    html += `
+                        <div class="mb-3">
+                            <label class="form-label">Barrio</label>
+                            <input type="text" class="form-control" id="barrioRecogida">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Dirección exacta</label>
+                            <input type="text" class="form-control" id="direccionRecogida">
+                        </div>
+                    `;
+                }
+                
+                html += `
+                    <div class="mb-3">
+                        <label class="form-label">Hora de recogida</label>
+                        <input type="time" class="form-control" id="horaRecogida" 
+                               min="${calcularHoraMinima(tiquete.data('horasalida'), 'antes')}"
+                               max="${tiquete.data('horasalida')}" required>
+                    </div>
+                `;
+            }
+            
+            if (trasladoDesde) {
+                html += `<h5 class="mt-4">Traslado desde punto de descenso</h5>`;
+                
+                if (tipoServicio === 'ruta_fija') {
+                    html += `
+                        <div class="mb-3">
+                            <label class="form-label">Destino final</label>
+                            <select class="form-select" id="destinoFinal">
+                                ${ciudadesHabilitadas.find(c => c.nombre === tiquete.data('destino')).paradas
+                                    .map(p => `<option>${p}</option>`).join('')}
+                            </select>
+                        </div>
+                    `;
+                } else {
+                    html += `
+                        <div class="mb-3">
+                            <label class="form-label">Barrio destino</label>
+                            <input type="text" class="form-control" id="barrioDestino">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Dirección exacta</label>
+                            <input type="text" class="form-control" id="direccionDestino">
+                        </div>
+                    `;
+                }
+                
+                html += `
+                    <div class="mb-3">
+                        <label class="form-label">Hora de abordaje</label>
+                        <input type="time" class="form-control" id="horaAbordaje" 
+                               min="${calcularHoraMinima(tiquete.data('horallegada'), 'despues')}" required>
+                    </div>
+                `;
+            }
+            
+            $('#camposAdicionales').html(html);
+        }
+
+        function calcularHoraMinima(horaBase, tipo) {
+            const [horas, minutos] = horaBase.split(':').map(Number);
+            const fecha = new Date();
+            fecha.setHours(horas);
+            fecha.setMinutes(minutos);
+            
+            if (tipo === 'antes') {
+                fecha.setHours(fecha.getHours() - 2);
+            } else {
+                fecha.setHours(fecha.getHours() + 1);
+            }
+            
+            return fecha.toTimeString().slice(0,5);
+        }
+
+        function guardarDatosTiquete() {
+            const tiquete = $('#selectTiquete option:selected');
+            
+            trasladoData = {
+                ...trasladoData,
+                tiquete: {
+                    id: tiquete.val(),
+                    origen: tiquete.data('origen'),
+                    destino: tiquete.data('destino'),
+                    horaSalida: tiquete.data('horasalida'),
+                    horaLlegada: tiquete.data('horallegada')
+                },
+                tipoServicio: $('#tipoServicio').val(),
+                trasladoHacia: $('#trasladoHacia').is(':checked'),
+                trasladoDesde: $('#trasladoDesde').is(':checked'),
+                cantidadPasajeros: $('#cantidadPasajeros').val()
+            };
+        }
+
+        // Paso 3: Registro de pasajeros
+        function renderRegistroPasajeros() {
+            let html = `
+                <div class="card">
+                    <div class="card-body">
+                        <h4 class="card-title">Registro de pasajeros</h4>
+                        <form id="formPasajeros">
+            `;
+
+            for (let i = 0; i < trasladoData.cantidadPasajeros; i++) {
+                html += `
+                    <div class="card mb-3">
+                        <div class="card-header">Pasajero ${i + 1}</div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Tipo de identificación</label>
+                                    <select class="form-select" name="tipoId" required>
+                                        <option value="">Seleccione...</option>
+                                        ${tiposIdentificacion.map(t => `<option>${t}</option>`).join('')}
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Número de identificación</label>
+                                    <input type="text" class="form-control" name="numeroId" required>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Nombres</label>
+                                    <input type="text" class="form-control" name="nombres" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Apellidos</label>
+                                    <input type="text" class="form-control" name="apellidos" required>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Teléfono</label>
+                                    <input type="tel" class="form-control" name="telefono" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Correo electrónico</label>
+                                    <input type="email" class="form-control" name="email" required>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            html += `
+                            <button type="submit" class="btn btn-success">Finalizar reserva</button>
+                        </form>
+                    </div>
+                </div>
+            `;
+
+            $app.html(html);
+
+            $('#formPasajeros').submit(function(e) {
+                e.preventDefault();
+                const pasajeros = [];
+                
+                $('.card.mb-3').each(function() {
+                    const $card = $(this);
+                    pasajeros.push({
+                        tipoId: $card.find('[name="tipoId"]').val(),
+                        numeroId: $card.find('[name="numeroId"]').val(),
+                        nombres: $card.find('[name="nombres"]').val(),
+                        apellidos: $card.find('[name="apellidos"]').val(),
+                        telefono: $card.find('[name="telefono"]').val(),
+                        email: $card.find('[name="email"]').val()
+                    });
+                });
+
+                trasladoData.pasajeros = pasajeros;
+                
+                // Aquí iría el envío real a tu API
+                console.log('Datos completos:', trasladoData);
+                alert('Reserva completada con éxito! Revisa la consola para ver los datos.');
+            });
+        }
+
+        // Iniciar flujo
+        renderIdentificacion();
+    });
+    </script>
+</body>
+</html>
