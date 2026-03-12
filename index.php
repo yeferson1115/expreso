@@ -160,6 +160,13 @@
             <div class="mt-3" id="ticketsResult"></div>
             <input type="hidden" id="selectedTicketStep1" value="">
           </div>
+          <div class="row mb-3 d-none" id="ticketSelectStep1Wrapper">
+            <div class="col-md-6">
+              <label class="form-label">Tiquete a usar</label>
+              <select id="ticketSelectStep1" class="form-select"></select>
+              <div class="small-muted mt-1">Selecciona aquí el tiquete que usarás en el paso 2.</div>
+            </div>
+          </div>
           <div class="d-flex justify-content-end">
             <button type="button" class="btn btn-brasilia" id="toStep2">Siguiente</button>
           </div>
