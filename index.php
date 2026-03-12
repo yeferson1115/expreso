@@ -158,14 +158,8 @@
           <div class="mb-3">
             <button type="button" class="btn btn-brasilia" id="btnCheckTickets">Confirmar tiquetes</button>            
             <div class="mt-3" id="ticketsResult"></div>
+            <div class="mt-2" id="ticketSelectionAlert"></div>
             <input type="hidden" id="selectedTicketStep1" value="">
-          </div>
-          <div class="row mb-3 d-none" id="ticketSelectStep1Wrapper">
-            <div class="col-md-6">
-              <label class="form-label">Tiquete a usar</label>
-              <select id="ticketSelectStep1" class="form-select"></select>
-              <div class="small-muted mt-1">Selecciona aquí el tiquete que usarás en el paso 2.</div>
-            </div>
           </div>
           <div class="d-flex justify-content-end">
             <button type="button" class="btn btn-brasilia" id="toStep2">Siguiente</button>
@@ -541,6 +535,19 @@ function showAlert(msg, type='info') {
   });
 }
 
+function showTicketSelectionRequiredAlertInline() {
+  $('#ticketSelectionAlert').html(`
+    <div class="alert alert-warning" role="alert">
+      <strong>Debes seleccionar un tiquete.</strong><br>
+      Para continuar al Tap 2, haz clic en uno de los tiquetes mostrados en la lista.
+    </div>
+  `);
+}
+
+function clearTicketSelectionRequiredAlertInline() {
+  $('#ticketSelectionAlert').empty();
+}
+
 
 
 function toDateOnSameDay(ticketDateISO, timeHHmm) {
@@ -776,7 +783,7 @@ $('#idNumber, #ticketSelect, #serviceType, #transferOption').on('change keyup', 
   }
 
   if (!$('#selectedTicketStep1').val()) {
-    showAlert('Selecciona un tiquete dando clic en la tarjeta antes de continuar.', 'warning');
+    showTicketSelectionRequiredAlertInline();
     return;
   }
 
@@ -816,6 +823,8 @@ $('#idNumber, #ticketSelect, #serviceType, #transferOption').on('change keyup', 
 
  function renderServiciosEnUI(response, options = {}) {
   const { isMock = false, errorMessage = '' } = options;
+
+  clearTicketSelectionRequiredAlertInline();
 
   if (response.error || !response.data || !Array.isArray(response.data) || response.data.length === 0) {
     $('#ticketsResult').html('<div class="alert alert-warning">No se encontraron servicios/tiquetes asociados a ese número.</div>');
@@ -915,6 +924,7 @@ $('#idNumber, #ticketSelect, #serviceType, #transferOption').on('change keyup', 
     return;
   }
 
+  clearTicketSelectionRequiredAlertInline();
   $('#ticketsResult').html('<div class="small text-muted">Consultando servicios...</div>');
 
   try {
@@ -958,6 +968,7 @@ $(document).on('click', '#ticketsResult .ticket-item-selectable', function(){
   $('#ticketsResult .ticket-item-selectable').removeClass('selected');
   $(this).addClass('selected');
   $('#selectedTicketStep1').val(value);
+  clearTicketSelectionRequiredAlertInline();
   $('#ticketSelect').val(value).trigger('change');
   updateStepButtons();
 });
@@ -965,6 +976,7 @@ $(document).on('click', '#ticketsResult .ticket-item-selectable', function(){
 $('#ticketSelect').on('change', function(){
   const value = $(this).val();
   $('#selectedTicketStep1').val(value || '');
+  if (value) clearTicketSelectionRequiredAlertInline();
   $('#ticketsResult .ticket-item-selectable').removeClass('selected');
   if (value) {
     $(`#ticketsResult .ticket-item-selectable[data-ticket-number="${value}"]`).addClass('selected');
@@ -1296,7 +1308,7 @@ function calculateTotal(hora,ruta,valor,punto){
     const service = $('#serviceType').val();
     const option = $('#transferOption').val();
     const pax = parseInt($('#passengerCount').val()) || 0;
-    if(!ticket) { showAlert('Selecciona el tiquete que usarás.', 'warning'); return; }
+    if(!ticket) { showTicketSelectionRequiredAlertInline(); return; }
     if(!service) { showAlert('Selecciona el tipo de servicio.', 'warning'); return; }
     if(!option) { showAlert('Selecciona la opción de traslado.', 'warning'); return; }
     if(pax < 1) { showAlert('Ingresa la cantidad de pasajeros.', 'warning'); return; }
