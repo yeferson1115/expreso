@@ -416,7 +416,7 @@
 <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
+<script src="https://cdn.jsdelivr.net/npm/axios@1.7.7/dist/axios.min.js"></script>
 
 
 <script>
@@ -764,8 +764,20 @@ $('#idNumber, #ticketSelect, #serviceType, #transferOption').on('change keyup', 
  
 });
 
- // Confirm tickets (simulado)
- $('#btnCheckTickets').on('click', function () {
+ // Consulta servicios/tiquetes con Axios
+ async function consultarServiciosConAxios(numeroDocumento) {
+  const endpoint = `https://txtest.lappiz.io/ExpresoBrasilia_Lappiz.api/api/functions/getTiquetes?numero=${encodeURIComponent(numeroDocumento)}`;
+  const response = await axios.get(endpoint, {
+    headers: {
+      Accept: 'application/json'
+    },
+    timeout: 20000
+  });
+
+  return response.data;
+ }
+
+ $('#btnCheckTickets').on('click', async function () {
    VBLoader.show();
 
   const numero = $('#idNumber').val().trim();
@@ -776,30 +788,20 @@ $('#idNumber, #ticketSelect, #serviceType, #transferOption').on('change keyup', 
     return;
   }
 
-  $('#ticketsResult').html('<div class="small text-muted">Consultando tiquetes...</div>');
+  $('#ticketsResult').html('<div class="small text-muted">Consultando servicios...</div>');
 
-  const dataToSend = {    
-    numeroIdentificacion: numero,
-    fechaInicio: '2018-01-01' // si la fecha es fija, puedes cambiarla dinámicamente si quieres
-  };
-
-    $.ajax({
-      url: "https://txtest.lappiz.io/ExpresoBrasilia_Lappiz.api/api/functions/getTiquetes?numero="+numero,
-      method: "GET",
-      contentType: "application/json",
-      dataType: "json",
-      data: JSON.stringify(dataToSend),
-      success: function (response) {
-        VBLoader.hide();
-        console.log('✅ Respuesta:', response);
+  try {
+    const response = await consultarServiciosConAxios(numero);
+    VBLoader.hide();
+    console.log('✅ Respuesta Axios:', response);
 
     if (response.error || !response.data || !Array.isArray(response.data) || response.data.length === 0) {
-      $('#ticketsResult').html('<div class="alert alert-warning">No se encontraron tiquetes asociados a ese número.</div>');
+      $('#ticketsResult').html('<div class="alert alert-warning">No se encontraron servicios/tiquetes asociados a ese número.</div>');
       $('#ticketSelect').empty();
       tiquetesEncontrados = false;
       return;
     }
-    
+
     tiquetesEncontrados = true;
     const tiquetes = response.data;
     let html = `<div class="list-group">`;
@@ -807,32 +809,29 @@ $('#idNumber, #ticketSelect, #serviceType, #transferOption').on('change keyup', 
     $sel.append(`<option value="">-- Seleccione el tiquete --</option>`);
 
     tiquetes.forEach(t => {
-      // === 🧠 Extraer origen y destino desde la descripción ===
-    let origen = '';
-    let destino = '';
+      let origen = '';
+      let destino = '';
 
-    if (t.descripcion && t.descripcion.includes('-') && t.descripcion.includes('/')) {
-      const partes = t.descripcion.split('-');
-      partes.shift();
-      const trayecto = partes.join('-').trim();
-      const [ori, des] = trayecto.split('/');
-      origen = (ori || '').trim();
-      destino = (des || '').trim();
-    }
+      if (t.descripcion && t.descripcion.includes('-') && t.descripcion.includes('/')) {
+        const partes = t.descripcion.split('-');
+        partes.shift();
+        const trayecto = partes.join('-').trim();
+        const [ori, des] = trayecto.split('/');
+        origen = (ori || '').trim();
+        destino = (des || '').trim();
+      }
 
-    $sel.append(`
-      <option value="${t.numero}"
-        data-fecha="${t.fechaViaje || ''}"
-        data-descripcion="${t.descripcion || ''}"
-        data-cliente="${t.cliente || ''}"
-        data-origin="${origen}"
-        data-destination="${destino}">
-        ${t.fechaViaje || '-'} — ${origen} / ${destino}
-      </option>
-    `);
+      $sel.append(`
+        <option value="${t.numero}"
+          data-fecha="${t.fechaViaje || ''}"
+          data-descripcion="${t.descripcion || ''}"
+          data-cliente="${t.cliente || ''}"
+          data-origin="${origen}"
+          data-destination="${destino}">
+          ${t.fechaViaje || '-'} — ${origen} / ${destino}
+        </option>
+      `);
 
-
-      // === Mostrar lista visual ===
       html += `
         <div class="list-group-item">
           <strong>${t.descripcion || '-'}</strong><br>
@@ -842,19 +841,16 @@ $('#idNumber, #ticketSelect, #serviceType, #transferOption').on('change keyup', 
           <div class="small text-muted">Empresa: ${t.empresa || '-'} — Agencia: ${t.agencia || '-'}</div>
         </div>
       `;
-
-    
     });
 
     html += `</div>`;
     $('#ticketsResult').html(html);
-  },
-  error: function (xhr) {
+  } catch (error) {
     VBLoader.hide();
-        console.error('❌ Error al consultar el servicio:', xhr);
-        $('#ticketsResult').html('<div class="alert alert-danger">Error al consultar el servicio. Verifica los datos o inténtalo más tarde.</div>');
-      }
-    });
+    console.error('❌ Error al consultar los servicios con Axios:', error);
+    const message = error?.response?.data?.message || 'Error al consultar los servicios. Verifica los datos o inténtalo más tarde.';
+    $('#ticketsResult').html(`<div class="alert alert-danger">${message}</div>`);
+  }
 });
 
   // Cuando seleccionan ticket
