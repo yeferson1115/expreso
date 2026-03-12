@@ -89,6 +89,19 @@
       border-color: rgba(31,67,104,.25);
       background-color: #fff;
     }
+    .ticket-item-selectable {
+      border: 2px solid #e4e9ef;
+      border-radius: 14px !important;
+      margin-bottom: .6rem;
+      text-align: left;
+      transition: all .2s ease;
+      background: #fff;
+    }
+    .ticket-item-selectable.selected {
+      border-color: var(--brand-primary);
+      background: #eef4fb;
+      box-shadow: 0 0 0 .15rem rgba(31,67,104,.12);
+    }
     @media (max-width: 768px) {
       #pills-tab {
         overflow-x: auto;
@@ -145,6 +158,7 @@
           <div class="mb-3">
             <button type="button" class="btn btn-brasilia" id="btnCheckTickets">Confirmar tiquetes</button>            
             <div class="mt-3" id="ticketsResult"></div>
+            <input type="hidden" id="selectedTicketStep1" value="">
           </div>
           <div class="row mb-3 d-none" id="ticketSelectStep1Wrapper">
             <div class="col-md-6">
@@ -761,8 +775,8 @@ $('#idNumber, #ticketSelect, #serviceType, #transferOption').on('change keyup', 
     return;
   }
 
-  if (!$('#ticketSelectStep1').val()) {
-    showAlert('Selecciona el tiquete a usar antes de continuar.', 'warning');
+  if (!$('#selectedTicketStep1').val()) {
+    showAlert('Selecciona un tiquete dando clic en la tarjeta antes de continuar.', 'warning');
     return;
   }
 
@@ -806,8 +820,6 @@ $('#idNumber, #ticketSelect, #serviceType, #transferOption').on('change keyup', 
   if (response.error || !response.data || !Array.isArray(response.data) || response.data.length === 0) {
     $('#ticketsResult').html('<div class="alert alert-warning">No se encontraron servicios/tiquetes asociados a ese número.</div>');
     $('#ticketSelect').empty();
-    $('#ticketSelectStep1').empty();
-    $('#ticketSelectStep1Wrapper').addClass('d-none');
     tiquetesEncontrados = false;
     return;
   }
@@ -824,10 +836,8 @@ $('#idNumber, #ticketSelect, #serviceType, #transferOption').on('change keyup', 
   }
 
   html += `<div class="list-group">`;
-  const $selStep1 = $('#ticketSelectStep1').empty();
   const $selStep2 = $('#ticketSelect').empty();
   const placeholder = `<option value="">-- Seleccione el tiquete --</option>`;
-  $selStep1.append(placeholder);
   $selStep2.append(placeholder);
 
   tiquetes.forEach((t, idx) => {
@@ -855,17 +865,16 @@ $('#idNumber, #ticketSelect, #serviceType, #transferOption').on('change keyup', 
       </option>
     `;
 
-    $selStep1.append(optionHtml);
     $selStep2.append(optionHtml);
 
     html += `
-      <div class="list-group-item">
+      <button type="button" class="list-group-item list-group-item-action ticket-item-selectable" data-ticket-number="${t.numero || ''}">
         <strong>${t.descripcion || '-'}</strong><br>
         <div>🕓 Fecha de viaje: <strong>${t.fechaViaje || '-'}</strong></div>
         <div>👤 Pasajero: ${t.cliente || '-'}</div>
         <div>📍 Origen: ${origen || '-'} — Destino: ${destino || '-'}</div>
         <div class="small text-muted">Empresa: ${t.empresa || '-'} — Agencia: ${t.agencia || '-'}</div>
-      </div>
+      </button>
     `;
   });
 
@@ -873,10 +882,11 @@ $('#idNumber, #ticketSelect, #serviceType, #transferOption').on('change keyup', 
   $('#ticketsResult').html(html);
 
   if (tiquetes.length > 0) {
-    $('#ticketSelectStep1Wrapper').removeClass('d-none');
     const defaultValue = tiquetes[0].numero || '';
-    $('#ticketSelectStep1').val(defaultValue);
+    $('#selectedTicketStep1').val(defaultValue);
     $('#ticketSelect').val(defaultValue).trigger('change');
+    $('#ticketsResult .ticket-item-selectable').removeClass('selected');
+    $(`#ticketsResult .ticket-item-selectable[data-ticket-number="${defaultValue}"]`).addClass('selected');
   }
  }
 
@@ -943,16 +953,22 @@ function applySelectedTicketInfo() {
   populateVehicles(origin, dest);
 }
 
-$('#ticketSelectStep1').on('change', function(){
-  const value = $(this).val();
-  $('#ticketSelect').val(value);
-  applySelectedTicketInfo();
+$(document).on('click', '#ticketsResult .ticket-item-selectable', function(){
+  const value = $(this).data('ticket-number');
+  $('#ticketsResult .ticket-item-selectable').removeClass('selected');
+  $(this).addClass('selected');
+  $('#selectedTicketStep1').val(value);
+  $('#ticketSelect').val(value).trigger('change');
   updateStepButtons();
 });
 
 $('#ticketSelect').on('change', function(){
   const value = $(this).val();
-  $('#ticketSelectStep1').val(value);
+  $('#selectedTicketStep1').val(value || '');
+  $('#ticketsResult .ticket-item-selectable').removeClass('selected');
+  if (value) {
+    $(`#ticketsResult .ticket-item-selectable[data-ticket-number="${value}"]`).addClass('selected');
+  }
   applySelectedTicketInfo();
   updateStepButtons();
 });
