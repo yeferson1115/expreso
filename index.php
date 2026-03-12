@@ -7,6 +7,12 @@
   <!-- Bootstrap 5 -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
+    :root {
+      --brand-primary: #1f4368;
+      --brand-soft: #e9edf2;
+      --brand-text: #07244a;
+    }
+    body { background:#f2f3f5; }
     .step { display:none; }
     .step.active { display:block; }
     .small-muted { font-size:0.9rem; color:#6c757d; }
@@ -14,44 +20,98 @@
     .invalid-feedback { display:block; }
     .cursor-pointer { cursor:pointer; }
     .tag { background:#eef; padding:3px 8px; border-radius:12px; margin-right:6px; }
-    .btn-brasilia { background:#0d6efd; color:#fff; border:none; }
+    .btn-brasilia {
+      background: var(--brand-primary);
+      color:#fff;
+      border:none;
+      border-radius: 32px;
+      padding: 10px 24px;
+      font-weight: 600;
+    }
+    .hero-banner {
+      position: relative;
+      min-height: 270px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(rgba(28,53,81,.62), rgba(28,53,81,.62)),
+        url('https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=1800&q=80') center/cover no-repeat;
+      color: #fff;
+      letter-spacing: 1px;
+    }
+    .hero-banner h1 {
+      font-size: clamp(2rem, 3.5vw, 3rem);
+      font-weight: 700;
+      margin: 0;
+    }
+    #mainContent {
+      margin-top: -48px;
+      position: relative;
+      z-index: 2;
+      background: #fff;
+      border-radius: 38px 38px 0 0;
+      padding: 1.8rem 1.4rem 2rem;
+      box-shadow: 0 -6px 24px rgba(0,0,0,0.08);
+      min-height: calc(100vh - 210px);
+    }
+    .title-ppal {
+      color: var(--brand-text);
+      font-size: clamp(1.8rem, 3vw, 2.8rem);
+      font-weight: 700;
+      margin-bottom: 0;
+    }
+    .search-card {
+      border: 0;
+      box-shadow: none;
+      background: transparent;
+    }
+    .title-step {
+      border: 0;
+      background: var(--brand-soft);
+      color: #52637a;
+      border-radius: 24px;
+      padding: .5rem .9rem;
+      font-size: .92rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .title-step.active {
+      background: #d3dfec;
+      color: var(--brand-primary);
+    }
+    .form-control, .form-select {
+      border-radius: 20px;
+      min-height: 46px;
+      background-color: #eff2f5;
+      border: 1px solid #eff2f5;
+    }
+    .form-control:focus, .form-select:focus {
+      box-shadow: 0 0 0 .2rem rgba(31,67,104,.15);
+      border-color: rgba(31,67,104,.25);
+      background-color: #fff;
+    }
+    @media (max-width: 768px) {
+      #pills-tab {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        padding-bottom: .4rem;
+      }
+    }
   </style>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 
-<div id="main-card" style="position: relative;
-    margin-top: -60px;
-    background: #ffffff;
-    border-top-left-radius: 40px;
-    border-top-right-radius: 40px;
-    padding: 2rem 1.5rem 6rem 1.5rem;
-    box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
-    min-height: calc(100vh - 260px);">
-    <div class="app-overlay"></div>
-    <div class="app-content">
-        <div id="search-step">
-
-            <h2>Programa tu traslado</h2>
-            <p>Te conectamos con la región caribe</p>
-
-            
-
-        </div>
-
-    </div>
-</div>
-
-
-
+<header class="hero-banner">
+  <h1>UNITRANSCO</h1>
+</header>
 
 <div class="container my-4" id="mainContent">
-  <h2 class="title-ppal">Programa tu traslado</h2>
-  <p class="small-muted">Sigue los pasos para solicitar un traslado hacia/desde tu punto de abordaje.</p>
+  <h2 class="title-ppal">Bienvenidos,</h2>
+  <p class="small-muted">Te conectamos con la región caribe.</p>
   <div id="alertPlaceholder"></div>
 
-  <div class="card">
+  <div class="card search-card">
     <div class="card-body">
       <!-- Stepper -->
       <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
@@ -2416,5 +2476,4 @@ function G_addModalResumen() {
 </script>
 </body>
 </html>
-
 
